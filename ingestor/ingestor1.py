@@ -14,10 +14,12 @@ def getPostings():
                                 database='flowermall')
     cursor = cnx.cursor()
 
+    # 필요한 데이터를 추출
     query = ('SELECT posts.ID AS id, posts.post_content AS content, posts.post_title AS title, posts.guid AS post_url, posts.post_date AS post_date, posts.post_modified AS modified_date, metadata.meta_value AS meta_value, image_data.meta_value AS image FROM wp_posts AS posts JOIN wp_postmeta AS image_metadata ON image_metadata.post_id = posts.ID JOIN wp_postmeta AS image_data ON image_data.post_id = image_metadata.meta_value JOIN wp_postmeta AS metadata ON metadata.post_id = posts.ID WHERE posts.post_status = "publish" AND posts.post_type = "product" AND metadata.meta_key = "_product_attributes" AND image_metadata.meta_key = "_thumbnail_id" AND image_data.meta_key = "_wp_attached_file"')
     cursor.execute(query)
 
     posting_list = []
+    # 결과 값으로 들어온 것을 조작 (cursor)
     for (id, content, title, url, post_date, modified_date, meta_value, image) in cursor:
         print("Post {} found. URL: {}".format(id, url))
         product = ProductPost(id, content, title, url,
@@ -29,20 +31,29 @@ def getPostings():
     return posting_list
 
 # 엘라스틱서치에 출력하는 함수입니다.
+# Post 를 사용하면 엘라스틱서치가 이 문서에 대한 고유 ID 를 직접 만들 수 있다.
+# Put 를 사용하면 사용자가 직접 이 문서에 대한 고유 ID 를 직접 만들 수 있다.
+# 현재는 put 을 사용하는데, 고유문서에 대한 특정한 ID 를 찾아서 이 ID를 통해서 중복이 되는 것을 막을 것이기 때문이다.
 def postToElasticSearch(products):
     putUrlPrefix = 'http://localhost:9200/products/_doc/'
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     for product in products:
         id = getUniqueIndexId(product.url)
         print(id)
-        #r = requests.put(putUrlPrefix + id, data=json.dumps(product.__dict__,
-        #                 indent=4, sort_keys=True, default=json_field_handler), headers=headers)
-        #if r.status_code >= 400:
-        #    print("There is an error writing to elasticsearch")
-        #    print(r.status_code)
-        #    print(r.json())
+        # json dumps 를 사용할 수 있는 이유는 PostProduct와 필드가 같기 때문이다.
+        # json_field_handler 는 post_date필드로 date 타입이기 때문에 isodate 를 맞춰줘야 한다.
+        # 결과값을 확인해보려면 check_es_index.py 실행
+        # localhost:9200/products/_search?q=장미
+        # took은 결과 시간을 의미한다.
+        r = requests.put(putUrlPrefix + id, data=json.dumps(product.__dict__,
+                        indent=4, sort_keys=True, default=json_field_handler), headers=headers)
+        # 에러가 발생하면 이유 출력
+        if r.status_code >= 400:
+           print("There is an error writing to elasticsearch")
+           print(r.status_code)
+           print(r.json())
 
-# 아주 naive 한 출고지 extraction subroutine
+# 아주 naive 한 출고지 extraction subroutine (국내, 해외 배송지를 구분)
 def assumeShippingLocation(raw_php_array):
     if u'국내' in raw_php_array:
         return '국내'
@@ -54,7 +65,8 @@ def json_field_handler(x):
         return x.isoformat()
     raise TypeError("Unable to parse json field")
 
-# 엘라스틱서치에서 사용될 문서의 고유 아이디를 생성합니다.
+# 엘라스틱서치에서 사용될 문서의 고유 아이디를 생성합니다. (hash function 사용)
+# hashlib는 똑같은 문서가 들어왔을 때 똑같은 코드를 제공해준다.
 def getUniqueIndexId(url):
     return hashlib.sha1(url.encode('utf-8')).hexdigest()
 
