@@ -3,7 +3,6 @@ version: '3.5'
 services:
 
   elasticsearch:
-    # amd/64로 하게 되면 Requests 시 에러 발생
     platform: linux/arm64
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
@@ -22,10 +21,9 @@ services:
       - 9200:9200
 
   mysql:
-    # arm/64로 하게 되면 에러 발생
     platform: linux/amd64
     image: mysql:5.7
-    container_name: mysql-5.7
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: my_secret_pw
       MYSQL_DATABASE: flowermall
@@ -43,7 +41,6 @@ services:
       - "9906:3306"
 
   wordpress:
-    platform: linux/amd64
     depends_on:
       - mysql
     container_name: wordpress
