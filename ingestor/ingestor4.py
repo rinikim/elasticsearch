@@ -35,6 +35,7 @@ def getPostings():
         image_file = wp_attachments_prefix + image
         dominant_color = raw_color.get_dominant_rgb(image_file)
         keywords.append(dominant_color)
+        # raw 색상인 이미지가 전체 rgb 색상 중에 몇 %를 차지하는지에 대한 함수
         r_rate, g_rate, b_rate = raw_color.get_rgb_ratio(image_file)
         raw_colors = {'red': r_rate, 'green': g_rate, 'blue': b_rate}
 

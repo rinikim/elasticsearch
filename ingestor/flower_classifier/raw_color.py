@@ -27,6 +27,7 @@ def get_dominant_raw_color(r,g,b):
         return 'green'
     return 'blue'
 
+# raw 색상인 이미지가 전체 rgb 색상 중에 몇 %를 차지하는지에 대한 함수
 def get_rgb_ratio(image_file):
     im = Image.open(image_file)
     pix = im.load()
