@@ -7,6 +7,7 @@ $es_search_url = "http://elasticsearch:9200/products/_search";
 
 function getClientCountryCode() {
     $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    # geoplugin 은 해외에 있는 사람인지 국내에 있는 사람인지 확인할 때 사용하는 서비스
     $rev_geo_lookup_url = "http://www.geoplugin.net/json.gp?ip=";
     $cURL = curl_init();
     $setopt_array = array(CURLOPT_URL => $rev_geo_lookup_url . urlencode($ip), CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => array()); 
@@ -37,7 +38,8 @@ $country_code = getClientCountryCode();
 $color_from_query = getColorFromQuery($query);
 $setopt_array = array(CURLOPT_URL => $es_search_url , CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => array('Content-Type: application/json')); 
 $es_json_body = (object) [];
-$es_json_body->query->bool->must = array(array('query_string' => array('query' => str_replace($color_from_query, "",$query))));
+# query 안에 bool 안에 must 를 만든다.
+$es_json_body->query->bool->must = array(array('query_string' => array('query' => $query)));
 if ($color_from_query != '') {
     array_push($es_json_body->query->bool->must,
         array('rank_feature' => array('field' => 'color_ranks.' . $color_from_query, 'saturation' => array('pivot' => 35))));
