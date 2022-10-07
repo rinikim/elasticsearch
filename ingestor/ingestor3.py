@@ -10,7 +10,9 @@ import flower_classifier.raw_color as raw_color
 
 # SQL 에 연결하여 제품 페이지들을 추출하여 ProductPost array 로 돌려주는 함수입니다
 def getPostings():
+    # 데이터베이스에 있는 이미지들이 해당 폴더 위치에 저장되어있어서 추가 (폴더 위치 path를 더 쉽게 적으려고)
     wp_attachments_prefix = '../www/wp-content/uploads/'
+    # url로 검색했을 경우에는 어떻게 찾을 수 있는지 path 추가
     wp_attachments_url_prefix = 'http://localhost:8000/wp-content/uploads/'
     kg_source = 'kg/kowiki-20210701-pages-articles-multistream-extracted.xml'
     wiki_kg = kg_loader.loadWikimedia(kg_source)
@@ -21,7 +23,7 @@ def getPostings():
                                 database='flowermall')
     cursor = cnx.cursor()
     # 2. Flower model 을 train 합니다.
-    # class_names, model = classifier.build_flower_model()
+    class_names, model = classifier.build_flower_model()
 
     query = ('SELECT posts.ID AS id, posts.post_content AS content, posts.post_title AS title, posts.guid AS post_url, posts.post_date AS post_date, posts.post_modified AS modified_date, metadata.meta_value AS meta_value, image_data.meta_value AS image FROM wp_posts AS posts JOIN wp_postmeta AS image_metadata ON image_metadata.post_id = posts.ID JOIN wp_postmeta AS image_data ON image_data.post_id = image_metadata.meta_value JOIN wp_postmeta AS metadata ON metadata.post_id = posts.ID WHERE posts.post_status = "publish" AND posts.post_type = "product" AND metadata.meta_key = "_product_attributes" AND image_metadata.meta_key = "_thumbnail_id" AND image_data.meta_key = "_wp_attached_file"')
     cursor.execute(query)
@@ -34,14 +36,14 @@ def getPostings():
         image_url = wp_attachments_url_prefix + image
         image_file = wp_attachments_prefix + image
         # 1. Dominant raw color 를 추출합니다.
-        # dominant_color = raw_color.get_dominant_rgb(image_file)
-        # keywords.append(dominant_color)
+        dominant_color = raw_color.get_dominant_rgb(image_file)
+        keywords.append(dominant_color)
 
         # 3. flower classification 을 통해 추가 데이터를 추출해 냅니다.
-        # image_class, confidence = classifier.predict_class(title, image_url, class_names, model)
-        #if (confidence > 0.8):
-        #    print(image_url + ' is most likely ' + image_class)
-        #    keywords.append(image_class)
+        image_class, confidence = classifier.predict_class(title, image_url, class_names, model)
+        if (confidence > 0.8):
+           print(image_url + ' is most likely ' + image_class)
+           keywords.append(image_class)
         for n_gram in title.split():
             if n_gram in wiki_kg:
                 print("found entry for " + n_gram)

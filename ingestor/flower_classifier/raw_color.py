@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 
+# 레드, 그린, 블루 중에서 어ㅓㄸㄴ 색이 dominant(우세)한지 알아보는 함수
 def get_dominant_rgb(image_file):
     im = Image.open(image_file)
     pix = im.load()
@@ -10,6 +11,7 @@ def get_dominant_rgb(image_file):
     for y in range(0, height):
         for x in range(0, width):
             r,g,b = im.getpixel((x, y))
+            # r,g,b 중에서 제일 큰 숫자를 비교하여 색 추출 (ex : 255, 20, 100) return 'red'
             rgb_counters[get_dominant_raw_color(r, g, b)] += 1
     highest_count = np.max(list(rgb_counters.values()))
     for k, v in rgb_counters.items():

@@ -55,7 +55,7 @@ def postToElasticSearch(products):
 
 # 아주 naive 한 출고지 extraction subroutine (국내, 해외 배송지를 구분)
 def assumeShippingLocation(raw_php_array):
-    if '국내' in raw_php_array:
+    if u'국내' in raw_php_array:
         return '국내'
     return '해외'
 
