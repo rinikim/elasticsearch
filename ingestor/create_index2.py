@@ -45,6 +45,7 @@ payload = json.dumps({
             "shipped_from": {
                 "type": "text"
             },
+            # 인덱스에 새로운 메타데이터 추가
             "keywords": {
                 "type": "text"
             },

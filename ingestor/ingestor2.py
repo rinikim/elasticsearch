@@ -5,9 +5,11 @@ import json
 import mysql.connector
 import requests
 import kg.kg_loader as kg_loader
+import mwparserfromhell
 
 # SQL 에 연결하여 제품 페이지들을 추출하여 ProductPost array 로 돌려주는 함수입니다
 def getPostings():
+    # 위키미디어가 제공하는 덤프 파일
     kg_source = 'kg/kowiki-20210701-pages-articles-multistream-extracted.xml'
     wiki_kg = kg_loader.loadWikimedia(kg_source)
     cnx = mysql.connector.connect(user='root',
@@ -26,13 +28,13 @@ def getPostings():
         meta_data = {}
         keywords = []
         # 1. 각 단어마다 위키미디아에 관련 정보를 찾아봅니다.
-        #for n_gram in title.split():
-        #    if n_gram in wiki_kg:
-        #        print("found entry for " + n_gram)
-        #        meta_data = {**meta_data, **wiki_kg[n_gram]}
-        #        subspecies = maybeGetSubspecies(wiki_kg[n_gram])
-        #        if subspecies != None:
-        #            keywords.append(subspecies)
+        for n_gram in title.split():
+           if n_gram in wiki_kg:
+               print("found entry for " + n_gram)
+               meta_data = {**meta_data, **wiki_kg[n_gram]}
+               subspecies = maybeGetSubspecies(wiki_kg[n_gram])
+               if subspecies != None:
+                   keywords.append(subspecies)
         product = ProductPost(id, content, title, url,
                               post_date, modified_date, assumeShippingLocation(meta_value), image, meta_data, " ".join(keywords))
         posting_list.append(product)
