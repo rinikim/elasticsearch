@@ -39,8 +39,11 @@ $color_from_query = getColorFromQuery($query);
 $setopt_array = array(CURLOPT_URL => $es_search_url , CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => array('Content-Type: application/json')); 
 $es_json_body = (object) [];
 # query 안에 bool 안에 must 를 만든다.
-$es_json_body->query->bool->must = array(array('query_string' => array('query' => $query)));
+# 'red 장미'로 검색했을 때 'red'를 떼어낸다.
+$es_json_body->query->bool->must = array(array('query_string' => array('query' => str_replace($color_from_query, "", $query));
+// $es_json_body->query->bool->must = array(array('query_string' => array('query' => $query)));
 if ($color_from_query != '') {
+    # "장미" 앞에 "red" 라는 단어가 붙으면 빨간 장미가 검색의 최우선으로 될 수 있게 코드 수정
     array_push($es_json_body->query->bool->must,
         array('rank_feature' => array('field' => 'color_ranks.' . $color_from_query, 'saturation' => array('pivot' => 35))));
 }
